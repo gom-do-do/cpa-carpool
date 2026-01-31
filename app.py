@@ -267,12 +267,15 @@ if v_no:
         # 팀원 카드 레이아웃 유지
         t_cols = st.columns(4)
         for i in range(4):
-            with t_cols[i]:
-                if i < len(current_team):
-                    m = current_team.iloc[i]
-                    st.markdown(f"<div class='main-card' style='text-align:center;'><b>{m['닉네임']}</b><br><span class='manner-tag'>{m['매너스타일']}</span></div>", unsafe_allow_html=True)
-                else: 
-                    st.markdown("<div class='main-card' style='text-align:center; color:#ccc;'>모집중</div>", unsafe_allow_html=True)
+    with t_cols[i]:
+        if i < len(current_team):
+            m = current_team.iloc[i]
+            if m['닉네임'] == "❌ 취소됨":
+                st.markdown("<div class='main-card' style='text-align:center; color:#999; background:#eee;'>🈳 빈자리</div>", unsafe_allow_html=True)
+            else:
+                st.markdown(f"<div class='main-card' style='text-align:center;'><b>{m['닉네임']}</b><br><span class='manner-tag'>{m['매너스타일']}</span></div>", unsafe_allow_html=True)
+        else: 
+            st.markdown("<div class='main-card' style='text-align:center; color:#ccc;'>모집중</div>", unsafe_allow_html=True)
         
         # --- 기능 섹션 (방장 기능/입장 버튼) ---
         if my_idx % 4 == 0:
@@ -291,10 +294,16 @@ if v_no:
         # --- [추가] 신청 취소 버튼 (로직 하단에 깔끔하게 배치) ---
         st.divider() # 구분선으로 시각적 분리
         with st.expander("신청을 취소하시겠습니까?"):
-            st.write("취소하시면 팀 목록에서 제거되며, 호차가 재배정될 수 있습니다.")
-            if st.button("❌ 매칭 신청 취소하기", type="primary", use_container_width=True):
-                df = df[df["응시번호"] != v_no_c]
-                save_data(df, DB_FILE)
+    st.write("취소하시면 해당 자리는 '빈자리'로 표시되며 호차 순서는 유지됩니다.")
+    if st.button("❌ 매칭 신청 취소하기", type="primary", use_container_width=True):
+        idx = df[df["응시번호"] == v_no_c].index[0]
+        df.at[idx, '닉네임'] = "❌ 취소됨"
+        df.at[idx, '매너스타일'] = "-"
+        df.at[idx, '응시번호'] = f"canceled_{v_no_c}_{time.time()}" # 중복 방지 및 조회 불가 처리
+        save_data(df, DB_FILE)
+        st.success("취소되었습니다.")
+        time.sleep(1)
+        st.rerun()
 
 # --- 섹션 3: 자유 모집 게시판 ---
 st.markdown("<div class='section-title'>3. 자유 모집 게시판</div>", unsafe_allow_html=True)
@@ -368,17 +377,38 @@ with col_e2:
 # --- 관리자 전용 기능 섹션 ---
 with st.expander("🛠️ 시스템 관리"):
     admin_pw = st.text_input("관리자 암호", type="password")
-    if admin_pw == "uos1234":  # 설정하신 비밀번호
+    if admin_pw == "uos1234":  
         st.write("### 🔓 관리자 모드 활성화됨")
         
-        # 1. 데이터 백업 (다운로드)
+        # 1. 데이터 백업
         st.download_button("📂 전체 매칭 데이터(CSV) 다운로드", df.to_csv(index=False).encode('utf-8-sig'), "cpa_db_backup.csv")
         
-        # 2. 게시글 통합 관리 (삭제 기능)
+        # 2. 매칭 명단 직접 관리 (추가된 부분!)
+        st.markdown("---")
+        st.subheader("👥 실시간 매칭 명단 관리")
+        if not df.empty:
+            # 취소되지 않은 정상 인원만 표시 (관리 효율성)
+            active_df = df[~df['닉네임'].str.contains("취소됨", na=False)]
+            if active_df.empty:
+                st.write("현재 매칭된 인원이 없습니다.")
+            else:
+                for idx, row in active_df.iterrows():
+                    c1, c2 = st.columns([0.8, 0.2])
+                    c1.write(f"**[{row['고사장']}]** {row['닉네임']} ({row['응시번호']})")
+                    # 관리자가 '제외'를 누르면 호차는 유지되고 해당 자리만 빈자리로 변경
+                    if c2.button("제외", key=f"admin_user_del_{idx}"):
+                        df.at[idx, '닉네임'] = "❌ 취소됨"
+                        df.at[idx, '매너스타일'] = "-"
+                        df.at[idx, '응시번호'] = f"admin_cancel_{row['응시번호']}"
+                        save_data(df, DB_FILE)
+                        st.error(f"{row['닉네임']}님을 제외 처리했습니다.")
+                        time.sleep(0.5)
+                        st.rerun()
+        
+        # 3. 게시글 통합 관리 (기존 코드 유지)
         st.markdown("---")
         st.subheader("🗑️ 게시글 관리")
         
-        # 자유게시판 글 삭제 예시
         if not board_df.empty:
             st.write("**자유 모집 게시판 관리**")
             for idx, row in board_df.iterrows():
@@ -390,7 +420,6 @@ with st.expander("🛠️ 시스템 관리"):
                     st.rerun()
         
         st.markdown("---")
-        # 응원 게시판 글 삭제 예시
         if not cheer_df.empty:
             st.write("**응원 게시판 관리**")
             for idx, row in cheer_df.iterrows():
