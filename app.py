@@ -164,12 +164,13 @@ tab1, tab2, tab3 = st.tabs(["📟 내 상황실", "📢 자율 모집 게시판"
 with tab1:
     st.markdown("""
         <div class='guide-box'>
-            <b>📟 내 상황실 이용 가이드</b><br>
-            • 사이드바에서 <b>응시번호 8자리</b>를 입력해 신청을 먼저 해주세요.<br>
-            • 우리는 응시번호 순으로 운명을 함께합니다. 고사장이 같다면 이미 전생에 <b>중앙도서관 옆자리</b>였을지도 모릅니다. 🦁<br>
-            • <b>방장 안내:</b> 각 호차의 첫 번째 학우님이 대장이 되어 오픈톡 링크를 올려주세요!
+            <b>📌 이용 안내</b><br>
+            • <b>등록 필수</b>: 사이드바에서 응시번호 등록 후 조회가 가능합니다.<br>
+            • <b>자동 매칭</b>: 고사장별 선착순 4명씩 자동으로 호차가 배정됩니다.<br>
+            • <b>방장 역할</b>: <b>1번 입석자</b>가 오픈톡 방을 만들고 링크를 게시해주세요.
         </div>
     """, unsafe_allow_html=True)
+    st.write("")
 
     v_no = st.text_input("🔐 조회용 응시번호 입력 (8자리)", type="password", placeholder="신청 시 입력한 8자리 숫자 입력")
     
@@ -221,16 +222,15 @@ with tab1:
 
 # --- TAB 2: 자율 모집 게시판 ---
 with tab2:
-    st.header("📢 자율 모집 게시판")
-    
     st.markdown("""
-        <div class='guide-box' style='background-color: #e7f5ff; border-left: 5px solid #228be6;'>
-            <b>💡 이용 에티켓 3계명</b><br>
-            1. <b>노쇼 금지</b>: 시험 당일 아침의 1분은 평심 유지에 매우 중요합니다. 약속을 꼭 지켜주세요.<br>
-            2. <b>완료 유도</b>: 팀이 꽉 찼나요? 오픈톡 제목에 <b>[완료]</b>라고 적어주시면 관리자가 리스트를 정리합니다. 🙏<br>
-            3. <b>정산 매너</b>: 택시비 정산은 내릴 때나 오픈톡에서 즉시 '1/N' 하는 센스!
+        <div class='guide-box' style='background-color: #f1f3f5; border-left: 5px solid #002758;'>
+            <b>📢 게시판 이용 가이드</b><br>
+            • <b>글 작성</b>: 고사장과 오픈톡 링크를 포함해 자유롭게 팀을 모집해 주세요.<br>
+            • <b>완료 처리</b>: 모집이 끝나면 오픈톡 제목을 <b>[완료]</b>로 바꿔주세요. (관리자가 확인 후 리스트 정리)<br>
+            • <b>신뢰 형성</b>: 장난 방지를 위해 삭제 기능은 운영자가 직접 관리합니다.
         </div>
     """, unsafe_allow_html=True)
+    st.write("")
 
     col_l, col_r = st.columns([0.4, 0.6])
     with col_l:
@@ -257,8 +257,14 @@ with tab2:
 
 # --- TAB 3: 합격 응원 ---
 with tab3:
-    st.header("🍀 응원 타임라인")
-    st.info("전농동에서 흘린 땀방울이 여의도의 야경으로 바뀔 그날까지, 시립대 CPA 커넥트가 함께합니다. 🎓")
+    st.markdown("""
+        <div class='guide-box' style='background-color: #fdfcf0; border-left: 5px solid #fbc02d;'>
+            <b>🍀 합격 응원 타임라인</b><br>
+            • 시험을 앞둔 학우들에게 힘이 되는 따뜻한 한마디를 남겨주세요.<br>
+            • 같이 고생한 동료로서 합격을 진심으로 응원합니다. 🦅
+        </div>
+    """, unsafe_allow_html=True)
+    st.write("")
     
     with st.form("cheer_form", clear_on_submit=True):
         cm = st.text_input("메시지", placeholder="학우들에게 따뜻한 응원을 한마디 남겨주세요!")
@@ -304,7 +310,14 @@ with st.sidebar:
                     df = pd.concat([df, new_d], ignore_index=True); save_data(df, DB_FILE)
                     st.success("✅ 신청 완료!"); st.balloons(); time.sleep(1); st.rerun()
             else: st.error("응시번호 8자리를 정확히 입력해주세요.")
-    
+    with st.sidebar.expander("⚠️ 이용 에티켓 (필독)"):
+    st.markdown("""
+        * **노쇼 금지**: 취소 시 최소 12시간 전 공유
+        * **5분 전 대기**: 약속 시간 엄수 (지각 시 출발)
+        * **즉시 정산**: 하차 직후 1/N 송금 완료
+        * **경로 준수**: 개인 경유지 추가 불가
+        * **스타일 존중**: 선택한 탑승 스타일에 맞게 배려
+    """)
     st.markdown("---")
     with st.expander("🛠️ 관리자 전용"):
         admin_code = st.text_input("관리자 암호", type="password")
@@ -315,3 +328,4 @@ with st.sidebar:
             if st.button("임시 데이터 초기화 (주의)"):
                 # 실제 운영 시에는 주석 처리하거나 신중히 사용
                 st.warning("GitHub CSV 파일을 직접 수정하는 것이 더 안전합니다.")
+
