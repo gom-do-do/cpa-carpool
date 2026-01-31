@@ -144,14 +144,18 @@ st.markdown(f"<div class='bujuk-card'>{random.choice(WITTY_BUJUKS)}</div>", unsa
 
 # --- [최상단 배치] 실시간 대시보드 ---
 if not df.empty:
+    # 닉네임에 '취소됨'이 포함되지 않은 정상 신청자만 필터링
+    active_only = df[~df['닉네임'].str.contains("취소됨", na=False)]
+    loc_counts = active_only['고사장'].value_counts()
+    
+    # 가로 스크롤 형태의 상단 대시보드 시작 (기존 스타일 코드 유지)
     st.markdown("""
         <style>
         .top-dash-container { 
             display: flex; overflow-x: auto; gap: 12px; padding: 10px 5px; 
-            scrollbar-width: none; -ms-overflow-style: none; /* 스크롤바 숨기기 */
+            scrollbar-width: none; -ms-overflow-style: none;
         }
         .top-dash-container::-webkit-scrollbar { display: none; }
-        
         .top-card {
             min-width: 140px; background: white; border-radius: 15px; padding: 15px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid #eee;
@@ -167,21 +171,13 @@ if not df.empty:
         </style>
     """, unsafe_allow_html=True)
 
-    if not df.empty:
-    # 닉네임에 '취소됨'이 포함되지 않은 정상 신청자만 필터링해서 카운트
-    active_only = df[~df['닉네임'].str.contains("취소됨", na=False)]
-    loc_counts = active_only['고사장'].value_counts()
-    
-    # 이후 대시보드 그리는 html 코드는 그대로 유지
-    
-    # 가로 스크롤 형태의 상단 대시보드
     dash_html = "<div class='top-dash-container'>"
     for loc, count in loc_counts.items():
         dash_html += f"""
             <div class='top-card'>
                 <div class='top-loc-name'>{loc}</div>
                 <div class='top-count'><span class='status-dot'></span>{count}명</div>
-                <div style='font-size: 0.7em; color: #888; margin-top: 5px;'>매칭 중...</div>
+                <div style='font-size: 0.7em; color: #888; margin-top: 5px;'>실시간 매칭 중</div>
             </div>
         """
     dash_html += "</div>"
