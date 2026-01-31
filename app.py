@@ -267,15 +267,15 @@ if v_no:
         # 팀원 카드 레이아웃 유지
         t_cols = st.columns(4)
         for i in range(4):
-    with t_cols[i]:
-        if i < len(current_team):
-            m = current_team.iloc[i]
-            if m['닉네임'] == "❌ 취소됨":
-                st.markdown("<div class='main-card' style='text-align:center; color:#999; background:#eee;'>🈳 빈자리</div>", unsafe_allow_html=True)
-            else:
-                st.markdown(f"<div class='main-card' style='text-align:center;'><b>{m['닉네임']}</b><br><span class='manner-tag'>{m['매너스타일']}</span></div>", unsafe_allow_html=True)
-        else: 
-            st.markdown("<div class='main-card' style='text-align:center; color:#ccc;'>모집중</div>", unsafe_allow_html=True)
+            with t_cols[i]:
+                if i < len(current_team):
+                    m = current_team.iloc[i]
+                    if m['닉네임'] == "❌ 취소됨":
+                        st.markdown("<div class='main-card' style='text-align:center; color:#999; background:#eee;'>🈳 빈자리</div>", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"<div class='main-card' style='text-align:center;'><b>{m['닉네임']}</b><br><span class='manner-tag'>{m['매너스타일']}</span></div>", unsafe_allow_html=True)
+                 else: 
+                     st.markdown("<div class='main-card' style='text-align:center; color:#ccc;'>모집중</div>", unsafe_allow_html=True)
         
         # --- 기능 섹션 (방장 기능/입장 버튼) ---
         if my_idx % 4 == 0:
