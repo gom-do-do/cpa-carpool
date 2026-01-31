@@ -12,32 +12,36 @@ st.set_page_config(page_title="시립대 CPA 커넥트", page_icon="🚕", layou
 
 st.markdown("""
     <style>
-    /* 1. 하단 푸터 및 워터마크 완벽 제거 */
-    footer {visibility: hidden; height: 0; position: absolute;}
-    #MainMenu {visibility: hidden;}
-    header {visibility: hidden;}
-    .stDeployButton {display:none;}
-    #stDecoration {display:none;}
-    
-    /* 2. 모바일 사이드바 화살표 텍스트 겹침(Keyboard shortcut) 제거 */
+    /* 1. 하단 문구(Hosted with/Created by) 강제 제거 */
+    /* visibility 대신 display:none과 z-index를 사용하여 완전히 지웁니다. */
+    footer {display: none !important;}
+    #MainMenu {display: none !important;}
+    header {height: 0px; background: transparent !important;}
+    .stDeployButton {display: none !important;}
+    #stDecoration {display: none !important;}
+
+    /* 2. 모바일 사이드바 버튼 복구 및 글자 겹침 해결 */
+    /* 버튼 자체는 보이게 하되, 안의 텍스트(Keyboard shortcut)만 0으로 만듭니다. */
     [data-testid="stSidebarCollapseIcon"] {
+        visibility: visible !important;
+        color: #002758 !important;
         font-size: 0px !important;
+        background-color: rgba(255,255,255,0.8);
+        border-radius: 5px;
     }
+    /* 버튼 안에 ☰ 아이콘만 강제로 삽입 */
     [data-testid="stSidebarCollapseIcon"]::before {
-        content: "☰"; /* 지저분한 텍스트 대신 깔끔한 메뉴 아이콘 */
+        content: "☰";
         font-size: 24px !important;
-        color: #002758;
-        visibility: visible;
-        display: block;
-    }
-    
-    /* 3. 전체 앱 여백 조정 (푸터 공간 삭제) */
-    .block-container {
-        padding-bottom: 1rem !important;
+        visibility: visible !important;
     }
 
-    /* 기존 디자인 유지 */
-    .stApp { background-color: #f8f9fa; }
+    /* 3. 모바일에서 사이드바가 아예 안 보일 때를 대비한 상단 여백 확보 */
+    .stApp {
+        margin-top: -50px;
+    }
+    
+    /* 기존 스타일 유지 */
     .main-card { border: 1px solid #e1e4e8; border-radius: 12px; padding: 18px; background-color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.03); margin-bottom: 15px; }
     .countdown-box { background: #002758; color: white; padding: 12px; border-radius: 10px; text-align: center; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 20px; }
     .d-day-text { font-size: 1.8em; font-weight: 800; }
@@ -47,9 +51,6 @@ st.markdown("""
         text-align: center; margin-bottom: 20px; font-weight: bold; 
         color: #5f4b00; font-size: 1.1em; box-shadow: 0 6px 15px rgba(0,0,0,0.1); line-height: 1.6;
     }
-    .manner-tag { display: inline-block; padding: 2px 8px; border-radius: 15px; font-size: 0.8em; background: #e0e7ff; color: #4338ca; margin-top: 5px; }
-    .cheer-bubble { background: #ffffff; border: 1px solid #dee2e6; padding: 12px 16px; border-radius: 18px 18px 18px 2px; margin-bottom: 12px; box-shadow: 2px 2px 8px rgba(0,0,0,0.05); }
-    .guide-box { background: #f1f3f5; padding: 15px; border-radius: 10px; border-left: 5px solid #002758; font-size: 0.85em; color: #333; line-height: 1.6; margin-bottom: 20px; }
     </style>
     """, unsafe_allow_html=True)
 
