@@ -366,7 +366,38 @@ with col_e2:
         </div>
     """, unsafe_allow_html=True)
 
-# 관리자
-with st.expander("🛠️"):
-    if st.text_input("PW", type="password") == "uos1234":
-        st.download_button("DB", df.to_csv(index=False).encode('utf-8-sig'), "cpa_db.csv")
+# --- 관리자 전용 기능 섹션 ---
+with st.expander("🛠️ 시스템 관리"):
+    admin_pw = st.text_input("관리자 암호", type="password")
+    if admin_pw == "uos1234":  # 설정하신 비밀번호
+        st.write("### 🔓 관리자 모드 활성화됨")
+        
+        # 1. 데이터 백업 (다운로드)
+        st.download_button("📂 전체 매칭 데이터(CSV) 다운로드", df.to_csv(index=False).encode('utf-8-sig'), "cpa_db_backup.csv")
+        
+        # 2. 게시글 통합 관리 (삭제 기능)
+        st.markdown("---")
+        st.subheader("🗑️ 게시글 관리")
+        
+        # 자유게시판 글 삭제 예시
+        if not board_df.empty:
+            st.write("**자유 모집 게시판 관리**")
+            for idx, row in board_df.iterrows():
+                col_txt, col_btn = st.columns([0.8, 0.2])
+                col_txt.write(f"[{row['고사장']}] {row['제목']} ({row['작성자']})")
+                if col_btn.button(f"삭제", key=f"del_brd_{idx}"):
+                    board_df = board_df.drop(idx)
+                    save_data(board_df, BOARD_FILE)
+                    st.rerun()
+        
+        st.markdown("---")
+        # 응원 게시판 글 삭제 예시
+        if not cheer_df.empty:
+            st.write("**응원 게시판 관리**")
+            for idx, row in cheer_df.iterrows():
+                col_txt, col_btn = st.columns([0.8, 0.2])
+                col_txt.write(f"{row['메시지']} ({row['닉네임']})")
+                if col_btn.button(f"삭제", key=f"del_chr_{idx}"):
+                    cheer_df = cheer_df.drop(idx)
+                    save_data(cheer_df, CHEER_FILE)
+                    st.rerun()
