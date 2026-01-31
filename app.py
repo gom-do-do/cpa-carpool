@@ -28,22 +28,41 @@ st.markdown("""
     .stDeployButton {display: none !important;}
     #stDecoration {display: none !important;}
 
-    /* 2. 모바일 사이드바 버튼 시각화 (시립대 블루 적용) */
-    [data-testid="stSidebarCollapseIcon"] {
-        visibility: visible !important;
-        font-size: 0px !important; 
-        width: 44px !important; 
-        height: 44px !important;
-        background-color: #002758 !important; 
-        border-radius: 8px !important;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
-        position: fixed !important;
-        top: 15px !important;
-        left: 15px !important;
-        z-index: 9999999 !important;
+   /* 2. 모바일 사이드바 버튼 강제 시각화 (더 강력한 선택자 사용) */
+    button[data-testid="stSidebarCollapseIcon"], 
+    .st-emotion-cache-6qob1r { /* Streamlit 버전에 따른 가변 클래스 대응 */
         display: flex !important;
-        align-items: center !important;
+        visibility: visible !important;
+        background-color: #002758 !important; /* 시립대 블루 */
+        border-radius: 8px !important;
+        width: 44px !important;
+        height: 44px !important;
+        position: fixed !important;
+        top: 12px !important;
+        left: 12px !important;
+        z-index: 999999 !important;
         justify-content: center !important;
+        align-items: center !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+    }
+
+    /* 버튼 안의 원래 아이콘은 숨기고 삼선을 강제로 주입 */
+    button[data-testid="stSidebarCollapseIcon"] svg {
+        display: none !important;
+    }
+
+    button[data-testid="stSidebarCollapseIcon"]::after {
+        content: "☰" !important;
+        color: white !important;
+        font-size: 24px !important;
+        font-weight: bold !important;
+        visibility: visible !important;
+        display: block !important;
+    }
+
+    /* 사이드바가 열렸을 때 닫기 버튼(X)도 잘 보이게 설정 */
+    button[data-testid="stSidebarCollapseIcon"]:has(svg[viewBox="0 0 24 24"]) ::after {
+        content: "✕" !important;
     }
 
     [data-testid="stSidebarCollapseIcon"]::before {
