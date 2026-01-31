@@ -12,6 +12,31 @@ st.set_page_config(page_title="시립대 CPA 커넥트", page_icon="🚕", layou
 
 st.markdown("""
     <style>
+    /* 1. 하단 푸터 및 워터마크 완벽 제거 */
+    footer {visibility: hidden; height: 0; position: absolute;}
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    .stDeployButton {display:none;}
+    #stDecoration {display:none;}
+    
+    /* 2. 모바일 사이드바 화살표 텍스트 겹침(Keyboard shortcut) 제거 */
+    [data-testid="stSidebarCollapseIcon"] {
+        font-size: 0px !important;
+    }
+    [data-testid="stSidebarCollapseIcon"]::before {
+        content: "☰"; /* 지저분한 텍스트 대신 깔끔한 메뉴 아이콘 */
+        font-size: 24px !important;
+        color: #002758;
+        visibility: visible;
+        display: block;
+    }
+    
+    /* 3. 전체 앱 여백 조정 (푸터 공간 삭제) */
+    .block-container {
+        padding-bottom: 1rem !important;
+    }
+
+    /* 기존 디자인 유지 */
     .stApp { background-color: #f8f9fa; }
     .main-card { border: 1px solid #e1e4e8; border-radius: 12px; padding: 18px; background-color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.03); margin-bottom: 15px; }
     .countdown-box { background: #002758; color: white; padding: 12px; border-radius: 10px; text-align: center; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 20px; }
@@ -25,25 +50,6 @@ st.markdown("""
     .manner-tag { display: inline-block; padding: 2px 8px; border-radius: 15px; font-size: 0.8em; background: #e0e7ff; color: #4338ca; margin-top: 5px; }
     .cheer-bubble { background: #ffffff; border: 1px solid #dee2e6; padding: 12px 16px; border-radius: 18px 18px 18px 2px; margin-bottom: 12px; box-shadow: 2px 2px 8px rgba(0,0,0,0.05); }
     .guide-box { background: #f1f3f5; padding: 15px; border-radius: 10px; border-left: 5px solid #002758; font-size: 0.85em; color: #333; line-height: 1.6; margin-bottom: 20px; }
-
-    /* --- 여기서부터 추가: 하단 워터마크 및 메뉴 숨기기 --- */
-    header {visibility: hidden;}
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    .stDeployButton {display:none;}
-    #stDecoration {display:none;}
-    /* --- 추가 끝 --- */
-
-    /* 모바일 화살표 텍스트 버그 방지 */
-    [data-testid="stSidebarCollapseIcon"] {
-        font-size: 0px !important;
-    }
-    [data-testid="stSidebarCollapseIcon"]::before {
-        content: "☰"; 
-        font-size: 24px !important;
-        color: #002758;
-        visibility: visible;
-    }
     </style>
     """, unsafe_allow_html=True)
 
