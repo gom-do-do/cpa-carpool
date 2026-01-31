@@ -247,63 +247,73 @@ with st.form("join_form"):
         else:
             st.error("응시번호 8자리를 정확히 입력해주세요.")
     
-# --- 섹션 2: 내 매칭 확인 ---
+# --- 섹션 2: 내 매칭 상황 확인 ---
 st.markdown("<div class='section-title'>2. 내 매칭 상황 확인</div>", unsafe_allow_html=True)
 v_no = st.text_input("🔐 신청한 응시번호 입력하여 조회", type="password")
 
 if v_no:
     v_no_c = re.sub(r'[^0-9]', '', str(v_no))
-    my_data = df[df["응시번호"] == v_no_c]
+    # 취소된 데이터까지 포함해서 전체 순서를 잡아야 호차가 안 바뀜
+    my_data = df[df["응시번호"].str.contains(v_no_c, na=False)]
     
     if not my_data.empty:
         me = my_data.iloc[-1]
+        # 해당 고사장/여정의 전체 명단을 등록시간 순으로 가져옴 (순번 고정)
         team_all = df[(df["고사장"] == me["고사장"]) & (df["왕복여부"] == me["왕복여부"])].sort_values("등록시간")
-        my_idx = list(team_all["응시번호"]).index(v_no_c)
+        
+        # 내 현재 위치(index) 확인
+        my_idx = list(team_all["응시번호"]).index(me["응시번호"])
         car_no = (my_idx // 4) + 1
         current_team = team_all.iloc[(car_no-1)*4 : car_no*4]
 
         st.info(f"📍 {me['고사장']} - {car_no}호차 팀")
         
-        # 팀원 카드 레이아웃 유지
+        # 팀원 카드 출력 (들여쓰기 주의)
         t_cols = st.columns(4)
         for i in range(4):
             with t_cols[i]:
                 if i < len(current_team):
                     m = current_team.iloc[i]
-                    if m['닉네임'] == "❌ 취소됨":
-                        st.markdown("<div class='main-card' style='text-align:center; color:#999; background:#eee;'>🈳 빈자리</div>", unsafe_allow_html=True)
+                    if "취소됨" in str(m['닉네임']):
+                        st.markdown("<div class='main-card' style='text-align:center; color:#999; background:#eee; min-height:100px; display:flex; align-items:center; justify-content:center;'>🈳 빈자리</div>", unsafe_allow_html=True)
                     else:
-                        st.markdown(f"<div class='main-card' style='text-align:center;'><b>{m['닉네임']}</b><br><span class='manner-tag'>{m['매너스타일']}</span></div>", unsafe_allow_html=True)
-                 else: 
-                     st.markdown("<div class='main-card' style='text-align:center; color:#ccc;'>모집중</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div class='main-card' style='text-align:center; min-height:100px;'><b>{m['닉네임']}</b><br><span class='manner-tag'>{m['매너스타일']}</span></div>", unsafe_allow_html=True)
+                else: 
+                    st.markdown("<div class='main-card' style='text-align:center; color:#ccc; min-height:100px; display:flex; align-items:center; justify-content:center;'>모집중</div>", unsafe_allow_html=True)
         
-        # --- 기능 섹션 (방장 기능/입장 버튼) ---
-        if my_idx % 4 == 0:
+        # 방장/입장 버튼 로직
+        if my_idx % 4 == 0 and "취소됨" not in me['닉네임']:
             st.success("👑 학우님은 방장입니다. 팀원들을 위해 오픈채팅 링크를 등록해주세요.")
             new_l = st.text_input("오픈채팅 링크 등록", value=me['오픈채팅링크'])
             if st.button("링크 저장"):
-                df.loc[df["응시번호"] == v_no_c, "오픈채팅링크"] = new_l
-                save_data(df, DB_FILE); st.success("저장되었습니다."); time.sleep(1); st.rerun()
-        else:
+                df.loc[df["응시번호"] == me["응시번호"], "오픈채팅링크"] = new_l
+                save_data(df, DB_FILE)
+                st.success("저장되었습니다.")
+                time.sleep(1)
+                st.rerun()
+        elif "취소됨" not in me['닉네임']:
             link = current_team.iloc[0]['오픈채팅링크']
             if pd.notna(link) and link != "": 
                 st.link_button("🚀 팀 오픈채팅방 입장", str(link), use_container_width=True)
             else: 
                 st.warning("방장님이 링크를 등록 중입니다.")
 
-        # --- [추가] 신청 취소 버튼 (로직 하단에 깔끔하게 배치) ---
-        st.divider() # 구분선으로 시각적 분리
-        with st.expander("신청을 취소하시겠습니까?"):
-    st.write("취소하시면 해당 자리는 '빈자리'로 표시되며 호차 순서는 유지됩니다.")
-    if st.button("❌ 매칭 신청 취소하기", type="primary", use_container_width=True):
-        idx = df[df["응시번호"] == v_no_c].index[0]
-        df.at[idx, '닉네임'] = "❌ 취소됨"
-        df.at[idx, '매너스타일'] = "-"
-        df.at[idx, '응시번호'] = f"canceled_{v_no_c}_{time.time()}" # 중복 방지 및 조회 불가 처리
-        save_data(df, DB_FILE)
-        st.success("취소되었습니다.")
-        time.sleep(1)
-        st.rerun()
+        # 취소 버튼 (데이터 삭제 대신 상태만 변경)
+        if "취소됨" not in me['닉네임']:
+            st.divider()
+            with st.expander("신청을 취소하시겠습니까?"):
+                st.write("취소 시 해당 자리는 빈자리로 표시되며 호차 순서는 유지됩니다.")
+                if st.button("❌ 매칭 신청 취소하기", type="primary", use_container_width=True):
+                    idx = df[df["응시번호"] == me["응시번호"]].index[0]
+                    df.at[idx, '닉네임'] = "❌ 취소됨"
+                    df.at[idx, '매너스타일'] = "-"
+                    df.at[idx, '응시번호'] = f"canceled_{v_no_c}_{int(time.time())}"
+                    save_data(df, DB_FILE)
+                    st.success("취소되었습니다.")
+                    time.sleep(1)
+                    st.rerun()
+    else:
+        st.error("신청 내역이 없거나 이미 취소된 번호입니다.")
 
 # --- 섹션 3: 자유 모집 게시판 ---
 st.markdown("<div class='section-title'>3. 자유 모집 게시판</div>", unsafe_allow_html=True)
