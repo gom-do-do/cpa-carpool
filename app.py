@@ -208,3 +208,21 @@ with st.sidebar:
     st.markdown("### 📖 이용 가이드")
 
     st.markdown("<div class='guide-box'>응시번호를 입력하면 고사장이 자동 배정됩니다. 팀원들과 오픈톡에서 만나요!</div>", unsafe_allow_html=True)
+
+st.markdown("---")
+with st.expander("🛠️ 관리자 전용"):
+    admin_code = st.text_input("관리자 코드", type="password")
+    if admin_code == "uos1234": # 비밀번호는 원하시는 대로 수정하세요!
+        st.success("인증 성공")
+        
+        # 1. 카풀 메인 데이터 백업
+        st.write("**카풀 신청 현황**")
+        csv1 = df.to_csv(index=False).encode('utf-8-sig')
+        st.download_button("카풀 데이터 다운로드", data=csv1, file_name="cpa_db_backup.csv")
+        
+        # 2. 자율 게시판 데이터 백업
+        st.write("**자율 게시판 현황**")
+        csv2 = board_df.to_csv(index=False).encode('utf-8-sig')
+        st.download_button("게시판 데이터 다운로드", data=csv2, file_name="board_backup.csv")
+        
+        st.info("💡 장난으로 지워진 글이 있다면 위 데이터를 확인해 보세요.")
