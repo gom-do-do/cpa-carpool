@@ -7,7 +7,7 @@ import urllib.parse
 import re
 import time
 
-# 1. 앱 설정 및 스타일 (기존 유지 + 가이드 박스 디자인 보강)
+# 1. 앱 설정 및 스타일
 st.set_page_config(page_title="시립대 CPA 커넥트", page_icon="🚕", layout="wide")
 
 st.markdown("""
@@ -28,7 +28,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. 데이터 초기화 및 고사장 설정 (기존 데이터 유지)
+# 2. 데이터 처리 함수 및 설정
 DB_FILE, BOARD_FILE, CHEER_FILE = "cpa_db.csv", "cpa_board.csv", "cpa_cheer.csv"
 ANIMALS = ["이루매 🦅", "아기사자 🦁", "똑똑한쿼카 🐾", "합격판다 🐼", "행운토끼 🐰", "회계사여우 🦊", "정답너구리 🦝", "열공고양이 🐱", "계산하는곰 🐻", "지혜로운부엉이 🦉"]
 
@@ -67,7 +67,7 @@ WITTY_BUJUKS = [
     "📈 정부회계 10문제 다 맞히기? 이거 예술이다 예술.",
     "⚖️ 상법 지문이랑 나랑 지금 '대화가 된다'. 엄대엄 승부 중!",
     "☕ 중도 매점 커피, 진짜 도움 많이 되고 있어. 마시자마자 뇌 풀가동!",
-    "🛑 한판 쉴래? 근데 남들은 안 쉬어. (정신 번쩍 들게 하는 멘트)",
+    "🛑 한판 쉴래? 근데 남들은 안 쉬어.",
     "🔥 말 안 하지만 지금 스트레스 되게 받는다. 그래도 중꺾마 가야지.",
     "🧧 재무회계 대차차액이 0원으로 딱 떨어질 때의 그 도파민... 예술이다!",
     "✍️ 마킹은 기술적으로 부드럽게. 결국은 체력전으로 가야지 끝까지.",
@@ -129,13 +129,13 @@ WITTY_BUJUKS = [
     "🌲 대강당 앞 소나무처럼 흔들리지 않는 뿌리 깊은 재무회계 실력!",
     "🦅 시립대 CPA 커넥트: '학우님, 여기서 제일 잘하는 사람이야!'"
 ]
+
 def load_data(file, cols):
     if os.path.exists(file): return pd.read_csv(file, dtype={'응시번호': str})
     return pd.DataFrame(columns=cols)
 
 def save_data(df, file): df.to_csv(file, index=False, encoding='utf-8-sig')
 
-# 데이터 로드
 df = load_data(DB_FILE, ["닉네임", "응시번호", "고사장", "왕복여부", "오픈채팅링크", "등록시간", "매칭완료", "매너스타일"])
 board_df = load_data(BOARD_FILE, ["제목", "고사장", "오픈채팅", "모집인원", "작성자", "작성시간", "상태"])
 cheer_df = load_data(CHEER_FILE, ["닉네임", "메시지", "시간"])
@@ -146,7 +146,7 @@ d_day = (datetime.date(2026, 3, 1) - datetime.date.today()).days
 st.markdown(f"<div class='countdown-box'><span class='d-day-text'>D-{d_day}</span> <span>(61회 1차 시험까지)</span></div>", unsafe_allow_html=True)
 st.markdown(f"<div class='bujuk-card'>{random.choice(WITTY_BUJUKS)}</div>", unsafe_allow_html=True)
 
-# 4. 실시간 매칭 현황판
+# 4. 실시간 현황
 if not df.empty:
     with st.expander("📊 실시간 고사장별 매칭 현황", expanded=True):
         loc_counts = df['고사장'].value_counts()
@@ -157,10 +157,9 @@ if not df.empty:
                 st.progress((count % 4) / 4 if count % 4 != 0 else 1.0)
                 st.caption(f"{4 - (count % 4) if count % 4 != 0 else 0}명 추가 시 다음 호차 완성")
 
-# 5. 메인 탭 구성
 tab1, tab2, tab3 = st.tabs(["📟 내 상황실", "📢 자율 모집 게시판", "🍀 합격 응원"])
 
-# --- TAB 1: 내 상황실 ---
+# --- TAB 1 ---
 with tab1:
     st.markdown("""
         <div class='guide-box'>
@@ -170,162 +169,112 @@ with tab1:
             • <b>방장 역할</b>: <b>1번 입석자</b>가 오픈톡 방을 만들고 링크를 게시해주세요.
         </div>
     """, unsafe_allow_html=True)
-    st.write("")
-
-    v_no = st.text_input("🔐 조회용 응시번호 입력 (8자리)", type="password", placeholder="신청 시 입력한 8자리 숫자 입력")
-    
+    v_no = st.text_input("🔐 조회용 응시번호 입력 (8자리)", type="password", key="v_no")
     if v_no:
         v_no_c = re.sub(r'[^0-9]', '', str(v_no))
         my_data = df[df["응시번호"] == v_no_c]
         if not my_data.empty:
-            me = my_data.iloc[-1] # 가장 최근 신청 데이터
+            me = my_data.iloc[-1]
             center_info = next((c for c in TEST_CENTERS if c["이름"] == me["고사장"]), None)
             team_all = df[(df["고사장"] == me["고사장"]) & (df["왕복여부"] == me["왕복여부"])].sort_values("등록시간")
-            
-            # 정확한 호차 배정 로직
             my_idx_in_list = list(team_all["응시번호"]).index(v_no_c)
             car_no = (my_idx_in_list // 4) + 1
             current_team = team_all.iloc[(car_no-1)*4 : car_no*4]
 
             st.header(f"📍 {me['고사장']} {car_no}호차")
-            if center_info: st.markdown(f"🏠 **고사장 주소**: {center_info['주소']}")
             st.link_button("🚕 예상 택시비 확인", f"https://map.naver.com/v5/directions/-/{urllib.parse.quote(me['고사장'])}/-/car", use_container_width=True)
-            
             t_cols = st.columns(4)
             for i in range(4):
                 with t_cols[i]:
                     if i < len(current_team):
                         m = current_team.iloc[i]
                         st.markdown(f"<div class='main-card' style='text-align:center;'><b>{m['닉네임']}</b><br><span class='manner-tag'>{m['매너스타일']}</span></div>", unsafe_allow_html=True)
-                    else: 
-                        st.markdown("<div class='main-card' style='text-align:center; color:#ccc;'>💺<br>모집중</div>", unsafe_allow_html=True)
+                    else: st.markdown("<div class='main-card' style='text-align:center; color:#ccc;'>💺<br>모집중</div>", unsafe_allow_html=True)
             
             st.divider()
-            # 1호차의 첫 번째 사람(idx % 4 == 0)을 방장으로 설정
             if my_idx_in_list % 4 == 0:
-                st.success("🎓 학우님은 이 팀의 방장(대장)입니다!")
-                new_l = st.text_input("🔗 우리 팀 오픈채팅 링크 등록", value=me['오픈채팅링크'], placeholder="카톡방 생성 후 링크를 입력하세요")
-                if st.button("링크 저장/업데이트"):
+                st.success("🎓 학우님은 이 팀의 방장입니다!")
+                new_l = st.text_input("🔗 우리 팀 오픈채팅 링크 등록", value=me['오픈채팅링크'])
+                if st.button("링크 업데이트"):
                     df.loc[df["응시번호"] == v_no_c, "오픈채팅링크"] = new_l
-                    save_data(df, DB_FILE)
-                    st.success("링크가 등록되었습니다! 팀원들이 조회 시 이 링크가 보입니다."); time.sleep(1); st.rerun()
+                    save_data(df, DB_FILE); st.success("등록 완료!"); time.sleep(1); st.rerun()
             else:
-                st.info("방장님(1번 입석자)이 등록한 링크로 입장하세요.")
-                # 현재 팀원 중 방장의 링크를 찾아서 표시
                 leader_link = current_team.iloc[0]['오픈채팅링크']
-                if pd.notna(leader_link) and leader_link != "":
-                    st.link_button("🚀 팀 오픈채팅방 입장", str(leader_link), use_container_width=True)
-                else:
-                    st.warning("아직 방장님이 링크를 등록하지 않았습니다. 잠시 후 다시 확인해주세요!")
-        else: 
-            st.warning("신청 내역이 없습니다. 왼쪽 사이드바에서 먼저 신청을 진행해주세요.")
+                if pd.notna(leader_link) and leader_link != "": st.link_button("🚀 팀 오픈채팅방 입장", str(leader_link), use_container_width=True)
+                else: st.warning("아직 방장님이 링크를 등록하지 않았습니다.")
+        else: st.warning("신청 내역이 없습니다.")
 
-# --- TAB 2: 자율 모집 게시판 ---
+# --- TAB 2 ---
 with tab2:
     st.markdown("""
         <div class='guide-box' style='background-color: #f1f3f5; border-left: 5px solid #002758;'>
             <b>📢 게시판 이용 가이드</b><br>
             • <b>글 작성</b>: 고사장과 오픈톡 링크를 포함해 자유롭게 팀을 모집해 주세요.<br>
-            • <b>완료 처리</b>: 모집이 끝나면 오픈톡 제목을 <b>[완료]</b>로 바꿔주세요. (관리자가 확인 후 리스트 정리)<br>
-            • <b>신뢰 형성</b>: 장난 방지를 위해 삭제 기능은 운영자가 직접 관리합니다.
+            • <b>완료 처리</b>: 모집이 끝나면 오픈톡 제목을 <b>[완료]</b>로 바꿔주세요.<br>
+            • <b>신뢰 형성</b>: 삭제 기능은 운영자가 관리합니다.
         </div>
     """, unsafe_allow_html=True)
-    st.write("")
-
     col_l, col_r = st.columns([0.4, 0.6])
     with col_l:
         with st.form("b_form", clear_on_submit=True):
-            st.write("📝 **새 모집글 작성**")
-            bt = st.text_input("제목", placeholder="예: [경기고] 7시 정문 출발 인원모집")
-            bp = st.selectbox("고사장 선택", [c["이름"] for c in TEST_CENTERS])
+            bt = st.text_input("제목")
+            bp = st.selectbox("고사장", [c["이름"] for c in TEST_CENTERS])
             bl = st.text_input("오픈톡 링크")
-            if st.form_submit_button("모집 시작하기"):
+            if st.form_submit_button("모집 시작"):
                 if bt and bl:
                     new_b = pd.DataFrame([{"제목": bt, "고사장": bp, "오픈채팅": bl, "모집인원": 1, "작성자": random.choice(ANIMALS), "작성시간": datetime.datetime.now(), "상태": "모집중"}])
                     board_df = pd.concat([board_df, new_b], ignore_index=True); save_data(board_df, BOARD_FILE); st.rerun()
-                else: st.error("제목과 링크를 입력해주세요.")
-
     with col_r:
         active_board = board_df[board_df['상태'] != "완료"].sort_values("작성시간", ascending=False)
-        if not active_board.empty:
-            for idx, r in active_board.iterrows():
-                with st.container():
-                    st.markdown(f"<div class='main-card'><b>[{r['고사장']}] {r['제목']}</b><br><small>{r['작성자']} | {str(r['작성시간'])[5:16]}</small></div>", unsafe_allow_html=True)
-                    st.link_button("🔗 오픈채팅방 입장하기", str(r['오픈채팅']), use_container_width=True)
-        else:
-            st.write("현재 모집 중인 팀이 없습니다. 첫 글의 주인공이 되어보세요!")
+        for idx, r in active_board.iterrows():
+            st.markdown(f"<div class='main-card'><b>[{r['고사장']}] {r['제목']}</b></div>", unsafe_allow_html=True)
+            st.link_button("🔗 입장하기", str(r['오픈채팅']), use_container_width=True)
 
-# --- TAB 3: 합격 응원 ---
+# --- TAB 3 ---
 with tab3:
+    st.header("🍀 응원 타임라인")
     st.markdown("""
         <div class='guide-box' style='background-color: #fdfcf0; border-left: 5px solid #fbc02d;'>
-            <b>🍀 합격 응원 타임라인</b><br>
             • 시험을 앞둔 학우들에게 힘이 되는 따뜻한 한마디를 남겨주세요.<br>
-            • 같이 고생한 동료로서 합격을 진심으로 응원합니다. 🦅
+            • 전농동에서 흘린 땀방울이 여의도의 야경으로 바뀔 그날을 함께 응원합니다. 🦅
         </div>
     """, unsafe_allow_html=True)
-    st.write("")
-    
     with st.form("cheer_form", clear_on_submit=True):
-        cm = st.text_input("메시지", placeholder="학우들에게 따뜻한 응원을 한마디 남겨주세요!")
+        cm = st.text_input("메시지")
         if st.form_submit_button("응원 등록"):
             if cm:
                 new_c = pd.DataFrame([{"닉네임": random.choice(ANIMALS), "메시지": cm, "시간": datetime.datetime.now()}])
                 cheer_df = pd.concat([cheer_df, new_c], ignore_index=True); save_data(cheer_df, CHEER_FILE); st.rerun()
-    
-    if not cheer_df.empty:
-        sorted_cheer = cheer_df.sort_values("시간", ascending=False)
-        for i in range(0, len(sorted_cheer), 2):
-            c_cols = st.columns(2)
-            for j in range(2):
-                if i + j < len(sorted_cheer):
-                    row = sorted_cheer.iloc[i + j]
-                    c_cols[j].markdown(f"<div class='cheer-bubble'><b>{row['메시지']}</b><br><small>- {row['닉네임']}</small></div>", unsafe_allow_html=True)
+    for i in range(0, len(cheer_df), 2):
+        c_cols = st.columns(2)
+        for j in range(2):
+            if i+j < len(cheer_df):
+                row = cheer_df.iloc[-(i+j+1)]
+                c_cols[j].markdown(f"<div class='cheer-bubble'><b>{row['메시지']}</b><br><small>- {row['닉네임']}</small></div>", unsafe_allow_html=True)
 
-# --- 사이드바: 신청 및 관리자 ---
+# --- SIDEBAR ---
 with st.sidebar:
     st.header("🚕 카풀 자동 매칭")
-    st.caption("응시번호를 기반으로 같은 고사장 학우를 찾아드립니다.")
     with st.form("join"):
-        u_no = st.text_input("응시번호 (8자리)", placeholder="2510XXXX")
-        uw = st.selectbox("여정 선택", ["편도 (학교→고사장)", "왕복"])
-        um = st.radio("나의 탑승 스타일", ["🔇 조용히 가고 싶어요", "💬 대화 환영", "💡 함께 퀴즈 내며 가요"], index=1)
-        if st.form_submit_button("카풀 매칭 신청"):
+        u_no = st.text_input("응시번호 (8자리)")
+        uw = st.selectbox("여정", ["편도 (학교→고사장)", "왕복"])
+        um = st.radio("탑승 스타일", ["🔇 조용히", "💬 대화 환영", "💡 퀴즈 내며"], index=1)
+        if st.form_submit_button("신청"):
             u_no_f = re.sub(r'[^0-9]', '', str(u_no))
             if len(u_no_f) == 8:
-                if u_no_f in df['응시번호'].values: 
-                    st.warning("⚠️ 이미 신청된 번호입니다. '내 상황실' 탭에서 조회해보세요.")
-                else:
-                    tgt = next((c for c in TEST_CENTERS if c["start"] <= int(u_no_f) <= c["end"]), None)
-                    new_d = pd.DataFrame([{
-                        "닉네임": random.choice(ANIMALS), 
-                        "응시번호": u_no_f, 
-                        "고사장": tgt["이름"] if tgt else "기타", 
-                        "왕복여부": uw, 
-                        "오픈채팅링크": "", 
-                        "등록시간": datetime.datetime.now(), 
-                        "매칭완료": "N", 
-                        "매너스타일": um
-                    }])
-                    df = pd.concat([df, new_d], ignore_index=True); save_data(df, DB_FILE)
-                    st.success("✅ 신청 완료!"); st.balloons(); time.sleep(1); st.rerun()
-            else: st.error("응시번호 8자리를 정확히 입력해주세요.")
-    with st.sidebar.expander("⚠️ 이용 에티켓 (필독)"):
-    st.markdown("""
-        * **노쇼 금지**: 취소 시 최소 12시간 전 공유
-        * **5분 전 대기**: 약속 시간 엄수 (지각 시 출발)
-        * **즉시 정산**: 하차 직후 1/N 송금 완료
-        * **경로 준수**: 개인 경유지 추가 불가
-        * **스타일 존중**: 선택한 탑승 스타일에 맞게 배려
-    """)
-    st.markdown("---")
-    with st.expander("🛠️ 관리자 전용"):
-        admin_code = st.text_input("관리자 암호", type="password")
-        if admin_code == "uos1234":
-            st.write("📊 데이터 백업/관리")
-            st.download_button("카풀 DB 다운로드", df.to_csv(index=False).encode('utf-8-sig'), "cpa_db.csv", "text/csv")
-            st.download_button("게시판 DB 다운로드", board_df.to_csv(index=False).encode('utf-8-sig'), "board_df.csv", "text/csv")
-            if st.button("임시 데이터 초기화 (주의)"):
-                # 실제 운영 시에는 주석 처리하거나 신중히 사용
-                st.warning("GitHub CSV 파일을 직접 수정하는 것이 더 안전합니다.")
+                tgt = next((c for c in TEST_CENTERS if c["start"] <= int(u_no_f) <= c["end"]), None)
+                new_d = pd.DataFrame([{"닉네임": random.choice(ANIMALS), "응시번호": u_no_f, "고사장": tgt["이름"] if tgt else "기타", "왕복여부": uw, "오픈채팅링크": "", "등록시간": datetime.datetime.now(), "매칭완료": "N", "매너스타일": um}])
+                df = pd.concat([df, new_d], ignore_index=True); save_data(df, DB_FILE); st.success("신청 완료!"); st.balloons(); time.sleep(1); st.rerun()
 
+    with st.expander("⚠️ 이용 에티켓 (필독)"):
+        st.markdown("""
+            * **노쇼 금지**: 취소 시 최소 12시간 전 공유
+            * **5분 전 대기**: 약속 시간 엄수
+            * **즉시 정산**: 하차 직후 송금
+            * **경로 준수**: 개인 경유지 추가 불가
+        """)
+    
+    st.markdown("---")
+    with st.expander("🛠️ 관리자"):
+        if st.text_input("암호", type="password") == "uos1234":
+            st.download_button("DB 다운로드", df.to_csv(index=False).encode('utf-8-sig'), "cpa_db.csv")
