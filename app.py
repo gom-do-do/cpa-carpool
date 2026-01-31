@@ -12,64 +12,44 @@ st.set_page_config(page_title="시립대 CPA 커넥트", page_icon="🚕", layou
 
 st.markdown("""
     <style>
-    /* 1. 하단 워터마크 및 메뉴 완전 파괴 (사파리 대응) */
-    /* display: none이 안 먹히는 경우를 대비해 위치와 크기를 0으로 강제 고정 */
-    footer {
-        display: none !important;
-        visibility: hidden !important;
-        height: 0px !important;
-        position: absolute !important;
-        bottom: -100px !important;
-    }
-    header {
-        visibility: hidden !important;
-        height: 0px !important;
-    }
-    #MainMenu {display: none !important;}
+    /* 1. 하단 워터마크 및 메뉴 완전 제거 */
+    footer {display: none !important;}
+    #MainMenu {visibility: hidden;}
     .stDeployButton {display: none !important;}
-    #stDecoration {display: none !important;}
 
-    /* 2. 모바일 사이드바 버튼 복구 (글자 겹침 방지 + 사파리 터치 영역 최적화) */
+    /* 2. 사이드바 화살표 살리기 + 글자 겹침 방지 */
+    /* 헤더를 숨기면 버튼도 사라지므로, 헤더는 투명하게만 만듭니다. */
+    header {
+        background-color: rgba(0,0,0,0) !important;
+        height: 3.5rem !important;
+    }
+    
+    /* 화살표 아이콘 영역 설정 */
     [data-testid="stSidebarCollapseIcon"] {
         visibility: visible !important;
-        font-size: 0px !important; /* "Keyboard shortcut" 텍스트 제거 */
-        width: 44px !important; /* 사파리 권장 터치 크기 */
-        height: 44px !important;
-        background-color: #ffffff !important;
+        font-size: 0px !important; /* "Keyboard shortcut" 영어 삭제 */
+        background-color: #002758 !important; /* 시립대 블루 포인트 */
+        color: white !important;
         border-radius: 8px !important;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important;
-        position: fixed !important;
-        top: 15px !important;
-        left: 15px !important;
-        z-index: 9999999 !important;
+        width: 40px !important;
+        height: 40px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
     }
 
-    /* 버튼 내 삼선 아이콘 강제 생성 */
+    /* 버튼 내부에 '☰' 아이콘 강제 삽입 */
     [data-testid="stSidebarCollapseIcon"]::before {
-        content: "☰" !important;
-        font-size: 26px !important;
-        color: #002758 !important;
+        content: "☰";
+        font-size: 22px !important;
+        color: white !important;
         visibility: visible !important;
     }
 
-    /* 3. 모바일 브라우저 상단바/노치 대응 여백 */
+    /* 3. 본문 상단 여백 (버튼과 겹치지 않게) */
     .block-container {
-        padding-top: 4rem !important;
-        padding-bottom: 0rem !important;
-    }
-    
-    /* 기존 스타일 유지 */
-    .stApp { background-color: #f8f9fa; }
-    .main-card { border: 1px solid #e1e4e8; border-radius: 12px; padding: 18px; background-color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.03); margin-bottom: 15px; }
-    .countdown-box { background: #002758; color: white; padding: 12px; border-radius: 10px; text-align: center; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 20px; }
-    .bujuk-card { 
-        background: linear-gradient(135deg, #fff9c4 0%, #fbc02d 100%); 
-        border: 2px solid #f9a825; padding: 20px; border-radius: 15px; 
-        text-align: center; margin-bottom: 20px; font-weight: bold; 
-        color: #5f4b00; font-size: 1.1em; line-height: 1.6;
+        padding-top: 3.5rem !important;
     }
     </style>
     """, unsafe_allow_html=True)
