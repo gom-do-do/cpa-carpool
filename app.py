@@ -13,44 +13,65 @@ st.set_page_config(page_title="시립대 CPA 커넥트", page_icon="🚕", layou
 st.markdown("""
     <style>
     /* 1. 하단 워터마크 및 메뉴 완전 제거 */
-    footer {display: none !important;}
-    #MainMenu {visibility: hidden;}
-    .stDeployButton {display: none !important;}
-
-    /* 2. 사이드바 화살표 살리기 + 글자 겹침 방지 */
-    /* 헤더를 숨기면 버튼도 사라지므로, 헤더는 투명하게만 만듭니다. */
-    header {
-        background-color: rgba(0,0,0,0) !important;
-        height: 3.5rem !important;
+    footer {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0px !important;
+        position: absolute !important;
+        bottom: -100px !important;
     }
-    
-    /* 화살표 아이콘 영역 설정 */
+    header {
+        visibility: hidden !important;
+        height: 0px !important;
+    }
+    #MainMenu {display: none !important;}
+    .stDeployButton {display: none !important;}
+    #stDecoration {display: none !important;}
+
+    /* 2. 모바일 사이드바 버튼 시각화 (시립대 블루 적용) */
     [data-testid="stSidebarCollapseIcon"] {
         visibility: visible !important;
-        font-size: 0px !important; /* "Keyboard shortcut" 영어 삭제 */
-        background-color: #002758 !important; /* 시립대 블루 포인트 */
-        color: white !important;
+        font-size: 0px !important; 
+        width: 44px !important; 
+        height: 44px !important;
+        background-color: #002758 !important; 
         border-radius: 8px !important;
-        width: 40px !important;
-        height: 40px !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
+        position: fixed !important;
+        top: 15px !important;
+        left: 15px !important;
+        z-index: 9999999 !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
     }
 
-    /* 버튼 내부에 '☰' 아이콘 강제 삽입 */
     [data-testid="stSidebarCollapseIcon"]::before {
-        content: "☰";
-        font-size: 22px !important;
-        color: white !important;
+        content: "☰" !important;
+        font-size: 26px !important;
+        color: #ffffff !important; 
         visibility: visible !important;
     }
 
-    /* 3. 본문 상단 여백 (버튼과 겹치지 않게) */
+    /* 3. 모바일 브라우저 상단바 대응 여백 */
     .block-container {
-        padding-top: 3.5rem !important;
+        padding-top: 4rem !important;
+        padding-bottom: 0rem !important;
     }
+    
+    /* 기존 스타일 유지 */
+    .stApp { background-color: #f8f9fa; }
+    .main-card { border: 1px solid #e1e4e8; border-radius: 12px; padding: 18px; background-color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.03); margin-bottom: 15px; }
+    .countdown-box { background: #002758; color: white; padding: 12px; border-radius: 10px; text-align: center; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 20px; }
+    .bujuk-card { 
+        background: linear-gradient(135deg, #fff9c4 0%, #fbc02d 100%); 
+        border: 2px solid #f9a825; padding: 20px; border-radius: 15px; 
+        text-align: center; margin-bottom: 20px; font-weight: bold; 
+        color: #5f4b00; font-size: 1.1em; line-height: 1.6;
+    }
+    .manner-tag { display: inline-block; padding: 2px 8px; border-radius: 15px; font-size: 0.8em; background: #e0e7ff; color: #4338ca; margin-top: 5px; }
+    .cheer-bubble { background: #ffffff; border: 1px solid #dee2e6; padding: 12px 16px; border-radius: 18px 18px 18px 2px; margin-bottom: 12px; box-shadow: 2px 2px 8px rgba(0,0,0,0.05); }
+    .guide-box { background: #f1f3f5; padding: 15px; border-radius: 10px; border-left: 5px solid #002758; font-size: 0.85em; color: #333; line-height: 1.6; margin-bottom: 20px; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -84,6 +105,7 @@ TEST_CENTERS = [
     {"이름": "금융감독원 연수원", "주소": "서울특별시 종로구 효자로 11", "start": 25113047, "end": 25113049}
 ]
 
+# [100% 복구] 모든 부적 리스트
 WITTY_BUJUKS = [
     "🦅 이루매: '상대(시험지) 잘하는 친구다. 거의 기출 끝판왕급이야.'",
     "🌸 내년 이맘때는 전농로 벚꽃 대신 여의도 파크원 벚꽃 보며 퇴근하는 운명!",
@@ -168,6 +190,12 @@ cheer_df = load_data(CHEER_FILE, ["닉네임", "메시지", "시간"])
 
 # 3. 메인 상단 UI
 st.title("🚕 시립대 CPA 커넥트")
+
+# [추가] 시각적 가이드 버튼
+if st.button("🚕 카풀 신청/조회 하러가기 (사이드바 메뉴)", use_container_width=True, type="primary"):
+    st.toast("왼쪽 상단의 파란색 [☰] 버튼을 눌러주세요!", icon="👈")
+    st.info("👈 모바일 학우님은 화면 왼쪽 위 **파란색 [☰] 아이콘**을 클릭하여 신청서를 작성해주세요!")
+
 d_day = (datetime.date(2026, 3, 1) - datetime.date.today()).days
 st.markdown(f"<div class='countdown-box'><span class='d-day-text'>D-{d_day}</span> <span>(61회 1차 시험까지)</span></div>", unsafe_allow_html=True)
 st.markdown(f"<div class='bujuk-card'>{random.choice(WITTY_BUJUKS)}</div>", unsafe_allow_html=True)
@@ -190,7 +218,7 @@ with tab1:
     st.markdown("""
         <div class='guide-box'>
             <b>📌 이용 안내</b><br>
-            • <b>모바일 사용자</b>: 왼쪽 상단의 <b>'>'</b> 화살표를 눌러 사이드바를 열고 신청해 주세요!<br>
+            • <b>모바일 사용자</b>: 왼쪽 상단의 <b>'☰'</b> 아이콘을 눌러 사이드바를 열고 신청해 주세요!<br>
             • <b>등록 필수</b>: 사이드바에서 응시번호 등록 후 조회가 가능합니다.<br>
             • <b>자동 매칭</b>: 고사장별 선착순 4명씩 자동으로 호차가 배정됩니다.<br>
             • <b>방장 역할</b>: <b>1번 입석자</b>가 오픈톡 방을 만들고 링크를 게시해주세요.
@@ -202,7 +230,6 @@ with tab1:
         my_data = df[df["응시번호"] == v_no_c]
         if not my_data.empty:
             me = my_data.iloc[-1]
-            center_info = next((c for c in TEST_CENTERS if c["이름"] == me["고사장"]), None)
             team_all = df[(df["고사장"] == me["고사장"]) & (df["왕복여부"] == me["왕복여부"])].sort_values("등록시간")
             my_idx_in_list = list(team_all["응시번호"]).index(v_no_c)
             car_no = (my_idx_in_list // 4) + 1
@@ -263,7 +290,7 @@ with tab3:
     st.markdown("""
         <div class='guide-box' style='background-color: #fdfcf0; border-left: 5px solid #fbc02d;'>
             • 시험을 앞둔 학우들에게 힘이 되는 따뜻한 한마디를 남겨주세요.<br>
-            • 전농동에서 흘린 땀방울이 여의도의 야경으로 바뀔 그날을 함께 응원합니다. 🦅
+            • 얼마나 간절했는지, 얼마나 견뎠는지 서로는 알기에. 우리의 합격을 응원합니다. 🦅
         </div>
     """, unsafe_allow_html=True)
     with st.form("cheer_form", clear_on_submit=True):
@@ -305,4 +332,3 @@ with st.sidebar:
     with st.expander("🛠️ 관리자"):
         if st.text_input("암호", type="password") == "uos1234":
             st.download_button("DB 다운로드", df.to_csv(index=False).encode('utf-8-sig'), "cpa_db.csv")
-
