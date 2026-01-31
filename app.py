@@ -394,11 +394,10 @@ with st.expander("🛠️ 시스템 관리"):
         # 1. 데이터 백업
         st.download_button("📂 전체 매칭 데이터(CSV) 다운로드", df.to_csv(index=False).encode('utf-8-sig'), "cpa_db_backup.csv")
         
-        # 2. 매칭 명단 직접 관리 (추가된 부분!)
+        # 2. 매칭 명단 직접 관리
         st.markdown("---")
         st.subheader("👥 실시간 매칭 명단 관리")
         if not df.empty:
-            # 취소되지 않은 정상 인원만 표시 (관리 효율성)
             active_df = df[~df['닉네임'].str.contains("취소됨", na=False)]
             if active_df.empty:
                 st.write("현재 매칭된 인원이 없습니다.")
@@ -406,7 +405,6 @@ with st.expander("🛠️ 시스템 관리"):
                 for idx, row in active_df.iterrows():
                     c1, c2 = st.columns([0.8, 0.2])
                     c1.write(f"**[{row['고사장']}]** {row['닉네임']} ({row['응시번호']})")
-                    # 관리자가 '제외'를 누르면 호차는 유지되고 해당 자리만 빈자리로 변경
                     if c2.button("제외", key=f"admin_user_del_{idx}"):
                         df.at[idx, '닉네임'] = "❌ 취소됨"
                         df.at[idx, '매너스타일'] = "-"
@@ -415,13 +413,13 @@ with st.expander("🛠️ 시스템 관리"):
                         st.error(f"{row['닉네임']}님을 제외 처리했습니다.")
                         time.sleep(0.5)
                         st.rerun()
-        
-        # 3. 게시글 통합 관리 (기존 코드 유지)
+
+        # 3. 게시글 통합 관리
         st.markdown("---")
         st.subheader("🗑️ 게시글 관리")
         
         if not board_df.empty:
-            st.write("**자유 모집 게시판 관리**")
+            st.write("**자유 모집 게시판**")
             for idx, row in board_df.iterrows():
                 col_txt, col_btn = st.columns([0.8, 0.2])
                 col_txt.write(f"[{row['고사장']}] {row['제목']} ({row['작성자']})")
@@ -430,9 +428,8 @@ with st.expander("🛠️ 시스템 관리"):
                     save_data(board_df, BOARD_FILE)
                     st.rerun()
         
-        st.markdown("---")
         if not cheer_df.empty:
-            st.write("**응원 게시판 관리**")
+            st.write("**응원 게시판**")
             for idx, row in cheer_df.iterrows():
                 col_txt, col_btn = st.columns([0.8, 0.2])
                 col_txt.write(f"{row['메시지']} ({row['닉네임']})")
@@ -440,3 +437,21 @@ with st.expander("🛠️ 시스템 관리"):
                     cheer_df = cheer_df.drop(idx)
                     save_data(cheer_df, CHEER_FILE)
                     st.rerun()
+
+        # 4. 데이터 초기화 (배포 직전용)
+        st.markdown("---")
+        st.subheader("⚠️ 데이터 전체 초기화")
+        st.warning("이 작업은 되돌릴 수 없습니다. 배포 직전에만 사용하세요.")
+        if st.button("🚨 모든 데이터 초기화 실행"):
+            # 컬럼 구조에 맞춰 빈 데이터 생성
+            empty_df = pd.DataFrame(columns=["닉네임", "응시번호", "고사장", "왕복여부", "오픈채팅링크", "등록시간", "매칭완료", "매너스타일"])
+            empty_board = pd.DataFrame(columns=["제목", "고사장", "오픈채팅", "모집인원", "작성자", "작성시간", "상태"])
+            empty_cheer = pd.DataFrame(columns=["닉네임", "메시지", "시간"])
+            
+            save_data(empty_df, DB_FILE)
+            save_data(empty_board, BOARD_FILE)
+            save_data(empty_cheer, CHEER_FILE)
+            
+            st.success("모든 데이터가 초기화되었습니다.")
+            time.sleep(1)
+            st.rerun()
