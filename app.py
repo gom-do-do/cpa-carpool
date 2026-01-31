@@ -206,4 +206,5 @@ with st.sidebar:
             else: st.error("응시번호 8자리를 확인해주세요.")
     st.markdown("---")
     st.markdown("### 📖 이용 가이드")
+
     st.markdown("<div class='guide-box'>응시번호를 입력하면 고사장이 자동 배정됩니다. 팀원들과 오픈톡에서 만나요!</div>", unsafe_allow_html=True)
