@@ -7,124 +7,65 @@ import urllib.parse
 import re
 import time
 
-# 1. 앱 설정 및 스타일
-st.set_page_config(page_title="시립대 CPA 커넥트", page_icon="🚕", layout="wide")
+# 1. 앱 설정 및 원페이지 최적화 (사이드바 숨김)
+st.set_page_config(page_title="시립대 CPA 커넥트", page_icon="🚕", layout="wide", initial_sidebar_state="collapsed")
 
 st.markdown("""
     <style>
-    /* 1. 하단 워터마크 및 메뉴 완전 제거 */
-    footer {
-        display: none !important;
-        visibility: hidden !important;
-        height: 0px !important;
-        position: absolute !important;
-        bottom: -100px !important;
-    }
-    header {
-        visibility: hidden !important;
-        height: 0px !important;
-    }
-    #MainMenu {display: none !important;}
+    /* 사이드바 및 불필요한 요소 제거 */
+    [data-testid="stSidebar"] {display: none !important;}
+    [data-testid="stSidebarCollapseIcon"] {display: none !important;}
     .stDeployButton {display: none !important;}
-    #stDecoration {display: none !important;}
+    footer {display: none !important;}
+    header {visibility: hidden !important;}
 
-   /* 2. 모바일 사이드바 버튼 강제 시각화 (더 강력한 선택자 사용) */
-    button[data-testid="stSidebarCollapseIcon"], 
-    .st-emotion-cache-6qob1r { /* Streamlit 버전에 따른 가변 클래스 대응 */
-        display: flex !important;
-        visibility: visible !important;
-        background-color: #002758 !important; /* 시립대 블루 */
-        border-radius: 8px !important;
-        width: 44px !important;
-        height: 44px !important;
-        position: fixed !important;
-        top: 12px !important;
-        left: 12px !important;
-        z-index: 999999 !important;
-        justify-content: center !important;
-        align-items: center !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
-    }
-
-    /* 버튼 안의 원래 아이콘은 숨기고 삼선을 강제로 주입 */
-    button[data-testid="stSidebarCollapseIcon"] svg {
-        display: none !important;
-    }
-
-    button[data-testid="stSidebarCollapseIcon"]::after {
-        content: "☰" !important;
-        color: white !important;
-        font-size: 24px !important;
-        font-weight: bold !important;
-        visibility: visible !important;
-        display: block !important;
-    }
-
-    /* 사이드바가 열렸을 때 닫기 버튼(X)도 잘 보이게 설정 */
-    button[data-testid="stSidebarCollapseIcon"]:has(svg[viewBox="0 0 24 24"]) ::after {
-        content: "✕" !important;
-    }
-
-    [data-testid="stSidebarCollapseIcon"]::before {
-        content: "☰" !important;
-        font-size: 26px !important;
-        color: #ffffff !important; 
-        visibility: visible !important;
-    }
-
-    /* 3. 모바일 브라우저 상단바 대응 여백 */
-    .block-container {
-        padding-top: 4rem !important;
-        padding-bottom: 0rem !important;
-    }
-    
-    /* 기존 스타일 유지 */
+    /* 메인 디자인 */
     .stApp { background-color: #f8f9fa; }
     .main-card { border: 1px solid #e1e4e8; border-radius: 12px; padding: 18px; background-color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.03); margin-bottom: 15px; }
-    .countdown-box { background: #002758; color: white; padding: 12px; border-radius: 10px; text-align: center; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 20px; }
+    
+    /* 벅차오르는 응원 박스 스타일 */
+    .cheer-main-card { 
+        background: linear-gradient(135deg, #002758 0%, #004aab 100%); 
+        color: white; padding: 25px; border-radius: 15px; 
+        text-align: center; margin-bottom: 25px; line-height: 1.7;
+        box-shadow: 0 10px 20px rgba(0,39,88,0.2);
+    }
+    
+    .countdown-box { background: #002758; color: white; padding: 12px; border-radius: 10px; text-align: center; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 20px; font-weight: bold; }
+    
     .bujuk-card { 
         background: linear-gradient(135deg, #fff9c4 0%, #fbc02d 100%); 
         border: 2px solid #f9a825; padding: 20px; border-radius: 15px; 
-        text-align: center; margin-bottom: 20px; font-weight: bold; 
+        text-align: center; margin-bottom: 25px; font-weight: bold; 
         color: #5f4b00; font-size: 1.1em; line-height: 1.6;
     }
+    
+    .section-title { font-size: 1.4em; font-weight: bold; color: #002758; margin: 25px 0 15px 0; padding-left: 10px; border-left: 5px solid #002758; }
     .manner-tag { display: inline-block; padding: 2px 8px; border-radius: 15px; font-size: 0.8em; background: #e0e7ff; color: #4338ca; margin-top: 5px; }
-    .cheer-bubble { background: #ffffff; border: 1px solid #dee2e6; padding: 12px 16px; border-radius: 18px 18px 18px 2px; margin-bottom: 12px; box-shadow: 2px 2px 8px rgba(0,0,0,0.05); }
     .guide-box { background: #f1f3f5; padding: 15px; border-radius: 10px; border-left: 5px solid #002758; font-size: 0.85em; color: #333; line-height: 1.6; margin-bottom: 20px; }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. 데이터 처리 함수 및 설정
+# 2. 데이터 및 고사장 정보 (보내주신 데이터 100% 반영)
 DB_FILE, BOARD_FILE, CHEER_FILE = "cpa_db.csv", "cpa_board.csv", "cpa_cheer.csv"
 ANIMALS = ["이루매 🦅", "아기사자 🦁", "똑똑한쿼카 🐾", "합격판다 🐼", "행운토끼 🐰", "회계사여우 🦊", "정답너구리 🦝", "열공고양이 🐱", "계산하는곰 🐻", "지혜로운부엉이 🦉"]
 
 TEST_CENTERS = [
-    {"이름": "경기고", "주소": "서울특별시 강남구 영동대로 643", "start": 25100001, "end": 25101100},
-    {"이름": "둔촌중", "주소": "서울특별시 강동구 진황도로61길 25-30", "start": 25101101, "end": 25101625},
-    {"이름": "명일중", "주소": "서울특별시 강동구 양재대로156길 57", "start": 25101626, "end": 25102400},
-    {"이름": "등촌고", "주소": "서울특별시 강서구 공항대로39길 115", "start": 25102401, "end": 25103150},
-    {"이름": "경인중", "주소": "서울특별시 구로구 경인로 301", "start": 25103151, "end": 25103656},
-    {"이름": "광운인공지능고", "주소": "서울특별시 노원구 광운로1길 24", "start": 25103657, "end": 25104056},
-    {"이름": "녹천중", "주소": "서울특별시 노원구 월계로 376", "start": 25104057, "end": 25104456},
-    {"이름": "장승중", "주소": "서울특별시 동작구 장승배기로10가길 25", "start": 25104457, "end": 25105056},
-    {"이름": "아현중", "주소": "서울특별시 마포구 마포대로 247", "start": 25105057, "end": 25105456},
-    {"이름": "연희중", "주소": "서울특별시 서대문구 증가로 170", "start": 25105457, "end": 25106016},
-    {"이름": "성수중", "주소": "서울특별시 성동구 서울숲길 18", "start": 25106017, "end": 25106376},
-    {"이름": "숭곡중", "주소": "서울특별시 성북구 종암로 208", "start": 25106377, "end": 25106976},
-    {"이름": "오주중", "주소": "서울특별시 송파구 동남로 281", "start": 25106977, "end": 25107626},
-    {"이름": "오금중", "주소": "서울특별시 송파구 오금로35길 20", "start": 25107627, "end": 25108301},
-    {"이름": "봉영여중", "주소": "서울특별시 양천구 목동동로2길 68", "start": 25108302, "end": 25108801},
-    {"이름": "신길중", "주소": "서울특별시 영등포구 신길로28길 43", "start": 25108802, "end": 25109476},
-    {"이름": "용산철도고", "주소": "서울특별시 용산구 서빙고로 24", "start": 25109477, "end": 25110276},
-    {"이름": "선린인터넷고", "주소": "서울특별시 용산구 원효로97길 33-4", "start": 25110277, "end": 25110996},
-    {"이름": "은평중", "주소": "서울특별시 은평구 갈현로17나길 12-1", "start": 25110997, "end": 25111416},
-    {"이름": "증산중", "주소": "서울특별시 은평구 증산로5길 27-30", "start": 25111417, "end": 25111916},
-    {"이름": "중화고", "주소": "서울특별시 중랑구 봉화산로27길 62", "start": 25111917, "end": 25112556},
-    {"이름": "면목중", "주소": "서울특별시 중랑구 용마산로70길 37", "start": 25112557, "end": 25113046},
-    {"이름": "금융감독원 연수원", "주소": "서울특별시 종로구 효자로 11", "start": 25113047, "end": 25113049}
+    {"이름": "경기고", "start": 25100001, "end": 25101100}, {"이름": "둔촌중", "start": 25101101, "end": 25101625},
+    {"이름": "명일중", "start": 25101626, "end": 25102400}, {"이름": "등촌고", "start": 25102401, "end": 25103150},
+    {"이름": "경인중", "start": 25103151, "end": 25103656}, {"이름": "광운인공지능고", "start": 25103657, "end": 25104056},
+    {"이름": "녹천중", "start": 25104057, "end": 25104456}, {"이름": "장승중", "start": 25104457, "end": 25105056},
+    {"이름": "아현중", "start": 25105057, "end": 25105456}, {"이름": "연희중", "start": 25105457, "end": 25106016},
+    {"이름": "성수중", "start": 25106017, "end": 25106376}, {"이름": "숭곡중", "start": 25106377, "end": 25106976},
+    {"이름": "오주중", "start": 25106977, "end": 25107626}, {"이름": "오금중", "start": 25107627, "end": 25108301},
+    {"이름": "봉영여중", "start": 25108302, "end": 25108801}, {"이름": "신길중", "start": 25108802, "end": 25109476},
+    {"이름": "용산철도고", "start": 25109477, "end": 25110276}, {"이름": "선린인터넷고", "start": 25110277, "end": 25110996},
+    {"이름": "은평중", "start": 25110997, "end": 25111416}, {"이름": "증산중", "start": 25111417, "end": 25111916},
+    {"이름": "중화고", "start": 25111917, "end": 25112556}, {"이름": "면목중", "start": 25112557, "end": 25113046},
+    {"이름": "금융감독원 연수원", "start": 25113047, "end": 25113049}
 ]
 
-# [100% 복구] 모든 부적 리스트
+# 모든 부적 멘트 리스트
 WITTY_BUJUKS = [
     "🦅 이루매: '상대(시험지) 잘하는 친구다. 거의 기출 끝판왕급이야.'",
     "🌸 내년 이맘때는 전농로 벚꽃 대신 여의도 파크원 벚꽃 보며 퇴근하는 운명!",
@@ -210,144 +151,121 @@ cheer_df = load_data(CHEER_FILE, ["닉네임", "메시지", "시간"])
 # 3. 메인 상단 UI
 st.title("🚕 시립대 CPA 커넥트")
 
-# [추가] 시각적 가이드 버튼
-if st.button("🚕 카풀 신청/조회 하러가기 (사이드바 메뉴)", use_container_width=True, type="primary"):
-    st.toast("왼쪽 상단의 파란색 [☰] 버튼을 눌러주세요!", icon="👈")
-    st.info("👈 모바일 학우님은 화면 왼쪽 위 **파란색 [☰] 아이콘**을 클릭하여 신청서를 작성해주세요!")
+# [벅차오르는 응원 카드]
+st.markdown("""
+    <div class='cheer-main-card'>
+        <h3 style='margin-bottom:10px; color:white;'>우리의 합격을 응원합니다</h3>
+        얼마나 간절했는지, 얼마나 견뎠는지 서로는 잘 알기에.<br>
+        긴 터널의 끝에서 우리 모두 웃으며 만날 것을 믿어 의심치 않습니다.<br>
+        <b>우리는 서로에게 가장 큰 힘이자, 미래의 동료입니다.</b>
+    </div>
+""", unsafe_allow_html=True)
 
+# [디데이 및 부적]
 d_day = (datetime.date(2026, 3, 1) - datetime.date.today()).days
-st.markdown(f"<div class='countdown-box'><span class='d-day-text'>D-{d_day}</span> <span>(61회 1차 시험까지)</span></div>", unsafe_allow_html=True)
+st.markdown(f"<div class='countdown-box'><span>61회 1차 시험까지 D-{d_day}</span></div>", unsafe_allow_html=True)
 st.markdown(f"<div class='bujuk-card'>{random.choice(WITTY_BUJUKS)}</div>", unsafe_allow_html=True)
 
-# 4. 실시간 현황
+# [실시간 현황 요약]
 if not df.empty:
-    with st.expander("📊 실시간 고사장별 매칭 현황", expanded=True):
+    with st.expander("📊 실시간 고사장별 신청 현황", expanded=False):
         loc_counts = df['고사장'].value_counts()
         cols = st.columns(3)
         for i, (loc, count) in enumerate(loc_counts.items()):
             with cols[i % 3]:
                 st.write(f"**{loc}** ({count}명)")
                 st.progress((count % 4) / 4 if count % 4 != 0 else 1.0)
-                st.caption(f"{4 - (count % 4) if count % 4 != 0 else 0}명 추가 시 다음 호차 완성")
 
-tab1, tab2, tab3 = st.tabs(["📟 내 상황실", "📢 자율 모집 게시판", "🍀 합격 응원"])
+# 4. 통합 원페이지 섹션
+# --- 섹션 1: 카풀 신청 ---
+st.markdown("<div class='section-title'>1. 카풀 매칭 신청</div>", unsafe_allow_html=True)
+with st.form("join_form"):
+    u_no = st.text_input("응시번호 (8자리 숫자)")
+    col1, col2 = st.columns(2)
+    with col1: uw = st.selectbox("여정 선택", ["편도 (학교→고사장)", "왕복"])
+    with col2: um = st.radio("탑승 스타일", ["🔇 조용히", "💬 대화 환영", "💡 퀴즈 내며"], horizontal=True)
+    if st.form_submit_button("신청하기"):
+        u_no_f = re.sub(r'[^0-9]', '', str(u_no))
+        if len(u_no_f) == 8:
+            tgt = next((c for c in TEST_CENTERS if c["start"] <= int(u_no_f) <= c["end"]), None)
+            new_d = pd.DataFrame([{"닉네임": random.choice(ANIMALS), "응시번호": u_no_f, "고사장": tgt["이름"] if tgt else "기타", "왕복여부": uw, "오픈채팅링크": "", "등록시간": datetime.datetime.now(), "매칭완료": "N", "매너스타일": um}])
+            df = pd.concat([df, new_d], ignore_index=True); save_data(df, DB_FILE)
+            st.success("신청 완료! 아래 '내 매칭 확인'에서 팀 정보를 확인하세요."); st.balloons(); time.sleep(1); st.rerun()
+        else: st.error("응시번호 8자리를 정확히 입력해주세요.")
 
-# --- TAB 1 ---
-with tab1:
-    st.markdown("""
-        <div class='guide-box'>
-            <b>📌 이용 안내</b><br>
-            • <b>모바일 사용자</b>: 왼쪽 상단의 <b>'☰'</b> 아이콘을 눌러 사이드바를 열고 신청해 주세요!<br>
-            • <b>등록 필수</b>: 사이드바에서 응시번호 등록 후 조회가 가능합니다.<br>
-            • <b>자동 매칭</b>: 고사장별 선착순 4명씩 자동으로 호차가 배정됩니다.<br>
-            • <b>방장 역할</b>: <b>1번 입석자</b>가 오픈톡 방을 만들고 링크를 게시해주세요.
-        </div>
-    """, unsafe_allow_html=True)
-    v_no = st.text_input("🔐 조회용 응시번호 입력 (8자리)", type="password", key="v_no")
-    if v_no:
-        v_no_c = re.sub(r'[^0-9]', '', str(v_no))
-        my_data = df[df["응시번호"] == v_no_c]
-        if not my_data.empty:
-            me = my_data.iloc[-1]
-            team_all = df[(df["고사장"] == me["고사장"]) & (df["왕복여부"] == me["왕복여부"])].sort_values("등록시간")
-            my_idx_in_list = list(team_all["응시번호"]).index(v_no_c)
-            car_no = (my_idx_in_list // 4) + 1
-            current_team = team_all.iloc[(car_no-1)*4 : car_no*4]
+# --- 섹션 2: 내 매칭 확인 ---
+st.markdown("<div class='section-title'>2. 내 매칭 상황 확인</div>", unsafe_allow_html=True)
+v_no = st.text_input("🔐 신청한 응시번호 입력 (비밀번호 대용)", type="password")
+if v_no:
+    v_no_c = re.sub(r'[^0-9]', '', str(v_no))
+    my_data = df[df["응시번호"] == v_no_c]
+    if not my_data.empty:
+        me = my_data.iloc[-1]
+        team_all = df[(df["고사장"] == me["고사장"]) & (df["왕복여부"] == me["왕복여부"])].sort_values("등록시간")
+        my_idx = list(team_all["응시번호"]).index(v_no_c)
+        car_no = (my_idx // 4) + 1
+        current_team = team_all.iloc[(car_no-1)*4 : car_no*4]
 
-            st.header(f"📍 {me['고사장']} {car_no}호차")
-            st.link_button("🚕 예상 택시비 확인", f"https://map.naver.com/v5/directions/-/{urllib.parse.quote(me['고사장'])}/-/car", use_container_width=True)
-            t_cols = st.columns(4)
-            for i in range(4):
-                with t_cols[i]:
-                    if i < len(current_team):
-                        m = current_team.iloc[i]
-                        st.markdown(f"<div class='main-card' style='text-align:center;'><b>{m['닉네임']}</b><br><span class='manner-tag'>{m['매너스타일']}</span></div>", unsafe_allow_html=True)
-                    else: st.markdown("<div class='main-card' style='text-align:center; color:#ccc;'>💺<br>모집중</div>", unsafe_allow_html=True)
-            
-            st.divider()
-            if my_idx_in_list % 4 == 0:
-                st.success("🎓 학우님은 이 팀의 방장입니다!")
-                new_l = st.text_input("🔗 우리 팀 오픈채팅 링크 등록", value=me['오픈채팅링크'])
-                if st.button("링크 업데이트"):
-                    df.loc[df["응시번호"] == v_no_c, "오픈채팅링크"] = new_l
-                    save_data(df, DB_FILE); st.success("등록 완료!"); time.sleep(1); st.rerun()
-            else:
-                leader_link = current_team.iloc[0]['오픈채팅링크']
-                if pd.notna(leader_link) and leader_link != "": st.link_button("🚀 팀 오픈채팅방 입장", str(leader_link), use_container_width=True)
-                else: st.warning("아직 방장님이 링크를 등록하지 않았습니다.")
-        else: st.warning("신청 내역이 없습니다.")
+        st.info(f"📍 {me['고사장']} - {car_no}호차 팀입니다.")
+        st.link_button("🚕 예상 택시비 확인", f"https://map.naver.com/v5/directions/-/{urllib.parse.quote(me['고사장'])}/-/car", use_container_width=True)
+        
+        t_cols = st.columns(4)
+        for i in range(4):
+            with t_cols[i]:
+                if i < len(current_team):
+                    m = current_team.iloc[i]
+                    st.markdown(f"<div class='main-card' style='text-align:center;'><b>{m['닉네임']}</b><br><span class='manner-tag'>{m['매너스타일']}</span></div>", unsafe_allow_html=True)
+                else: st.markdown("<div class='main-card' style='text-align:center; color:#ccc;'>모집중</div>", unsafe_allow_html=True)
+        
+        if my_idx % 4 == 0:
+            st.success("🎓 방장님, 팀원들을 위해 오픈채팅 링크를 등록해주세요!")
+            new_l = st.text_input("오픈채팅 링크", value=me['오픈채팅링크'])
+            if st.button("링크 저장"):
+                df.loc[df["응시번호"] == v_no_c, "오픈채팅링크"] = new_l
+                save_data(df, DB_FILE); st.success("저장되었습니다."); time.sleep(1); st.rerun()
+        else:
+            link = current_team.iloc[0]['오픈채팅링크']
+            if pd.notna(link) and link != "": st.link_button("🚀 팀 오픈채팅방 입장", str(link), use_container_width=True)
+            else: st.warning("방장님이 링크를 등록 중입니다.")
 
-# --- TAB 2 ---
-with tab2:
-    st.markdown("""
-        <div class='guide-box' style='background-color: #f1f3f5; border-left: 5px solid #002758;'>
-            <b>📢 게시판 이용 가이드</b><br>
-            • <b>글 작성</b>: 고사장과 오픈톡 링크를 포함해 자유롭게 팀을 모집해 주세요.<br>
-            • <b>완료 처리</b>: 모집이 끝나면 오픈톡 제목을 <b>[완료]</b>로 바꿔주세요.<br>
-            • <b>신뢰 형성</b>: 삭제 기능은 운영자가 관리합니다.
-        </div>
-    """, unsafe_allow_html=True)
+# --- 섹션 3: 게시판 및 응원 ---
+st.markdown("<div class='section-title'>3. 자유 게시판 & 응원</div>", unsafe_allow_html=True)
+tab_a, tab_b = st.tabs(["📢 자율 모집", "🍀 합격 응원"])
+
+with tab_a:
     col_l, col_r = st.columns([0.4, 0.6])
     with col_l:
-        with st.form("b_form", clear_on_submit=True):
+        with st.form("b_form"):
             bt = st.text_input("제목")
             bp = st.selectbox("고사장", [c["이름"] for c in TEST_CENTERS])
             bl = st.text_input("오픈톡 링크")
-            if st.form_submit_button("모집 시작"):
+            if st.form_submit_button("모집 글 올리기"):
                 if bt and bl:
-                    new_b = pd.DataFrame([{"제목": bt, "고사장": bp, "오픈채팅": bl, "모집인원": 1, "작성자": random.choice(ANIMALS), "작성시간": datetime.datetime.now(), "상태": "모집중"}])
+                    new_b = pd.DataFrame([{"제목": bt, "고사장": bp, "오픈채팅": bl, "작성자": random.choice(ANIMALS), "작성시간": datetime.datetime.now(), "상태": "모집중"}])
                     board_df = pd.concat([board_df, new_b], ignore_index=True); save_data(board_df, BOARD_FILE); st.rerun()
     with col_r:
-        active_board = board_df[board_df['상태'] != "완료"].sort_values("작성시간", ascending=False)
-        for idx, r in active_board.iterrows():
+        for idx, r in board_df.sort_values("작성시간", ascending=False).head(5).iterrows():
             st.markdown(f"<div class='main-card'><b>[{r['고사장']}] {r['제목']}</b></div>", unsafe_allow_html=True)
             st.link_button("🔗 입장하기", str(r['오픈채팅']), use_container_width=True)
 
-# --- TAB 3 ---
-with tab3:
-    st.header("🍀 응원 타임라인")
-    st.markdown("""
-        <div class='guide-box' style='background-color: #fdfcf0; border-left: 5px solid #fbc02d;'>
-            • 시험을 앞둔 학우들에게 힘이 되는 따뜻한 한마디를 남겨주세요.<br>
-            • 얼마나 간절했는지, 얼마나 견뎠는지 서로는 알기에. 우리의 합격을 응원합니다. 🦅
-        </div>
-    """, unsafe_allow_html=True)
+with tab_b:
     with st.form("cheer_form", clear_on_submit=True):
-        cm = st.text_input("메시지")
-        if st.form_submit_button("응원 등록"):
+        cm = st.text_input("서로에게 힘이 되는 한마디")
+        if st.form_submit_button("응원 남기기"):
             if cm:
                 new_c = pd.DataFrame([{"닉네임": random.choice(ANIMALS), "메시지": cm, "시간": datetime.datetime.now()}])
                 cheer_df = pd.concat([cheer_df, new_c], ignore_index=True); save_data(cheer_df, CHEER_FILE); st.rerun()
-    for i in range(0, len(cheer_df), 2):
+    for i in range(0, min(len(cheer_df), 10), 2):
         c_cols = st.columns(2)
         for j in range(2):
             if i+j < len(cheer_df):
                 row = cheer_df.iloc[-(i+j+1)]
-                c_cols[j].markdown(f"<div class='cheer-bubble'><b>{row['메시지']}</b><br><small>- {row['닉네임']}</small></div>", unsafe_allow_html=True)
+                c_cols[j].markdown(f"<div class='main-card'><b>{row['메시지']}</b><br><small>- {row['닉네임']}</small></div>", unsafe_allow_html=True)
 
-# --- SIDEBAR ---
-with st.sidebar:
-    st.header("🚕 카풀 자동 매칭")
-    with st.form("join"):
-        u_no = st.text_input("응시번호 (8자리)")
-        uw = st.selectbox("여정", ["편도 (학교→고사장)", "왕복"])
-        um = st.radio("탑승 스타일", ["🔇 조용히", "💬 대화 환영", "💡 퀴즈 내며"], index=1)
-        if st.form_submit_button("신청"):
-            u_no_f = re.sub(r'[^0-9]', '', str(u_no))
-            if len(u_no_f) == 8:
-                tgt = next((c for c in TEST_CENTERS if c["start"] <= int(u_no_f) <= c["end"]), None)
-                new_d = pd.DataFrame([{"닉네임": random.choice(ANIMALS), "응시번호": u_no_f, "고사장": tgt["이름"] if tgt else "기타", "왕복여부": uw, "오픈채팅링크": "", "등록시간": datetime.datetime.now(), "매칭완료": "N", "매너스타일": um}])
-                df = pd.concat([df, new_d], ignore_index=True); save_data(df, DB_FILE); st.success("신청 완료!"); st.balloons(); time.sleep(1); st.rerun()
+# 에티켓 섹션
+st.markdown("<div class='guide-box'><b>⚠️ 카풀 에티켓:</b> 노쇼 금지, 5분 전 대기, 하차 후 즉시 송금, 경로 변경 불가</div>", unsafe_allow_html=True)
 
-    with st.expander("⚠️ 이용 에티켓 (필독)"):
-        st.markdown("""
-            * **노쇼 금지**: 취소 시 최소 12시간 전 공유
-            * **5분 전 대기**: 약속 시간 엄수
-            * **즉시 정산**: 하차 직후 송금
-            * **경로 준수**: 개인 경유지 추가 불가
-        """)
-    
-    st.markdown("---")
-    with st.expander("🛠️ 관리자"):
-        if st.text_input("암호", type="password") == "uos1234":
-            st.download_button("DB 다운로드", df.to_csv(index=False).encode('utf-8-sig'), "cpa_db.csv")
+# 관리자
+with st.expander("🛠️"):
+    if st.text_input("PW", type="password") == "uos1234":
+        st.download_button("DB", df.to_csv(index=False).encode('utf-8-sig'), "cpa_db.csv")
