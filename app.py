@@ -143,6 +143,46 @@ d_day = (datetime.date(2026, 3, 1) - datetime.date.today()).days
 st.markdown(f"<div class='countdown-box'><span>61회 1차 시험까지 D-{d_day}</span></div>", unsafe_allow_html=True)
 st.markdown(f"<div class='bujuk-card'>{random.choice(WITTY_BUJUKS)}</div>", unsafe_allow_html=True)
 
+# --- [최상단 배치] 실시간 대시보드 ---
+if not df.empty:
+    st.markdown("""
+        <style>
+        .top-dash-container { 
+            display: flex; overflow-x: auto; gap: 12px; padding: 10px 5px; 
+            scrollbar-width: none; -ms-overflow-style: none; /* 스크롤바 숨기기 */
+        }
+        .top-dash-container::-webkit-scrollbar { display: none; }
+        
+        .top-card {
+            min-width: 140px; background: white; border-radius: 15px; padding: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid #eee;
+            text-align: center; position: relative;
+        }
+        .top-loc-name { font-size: 0.85em; font-weight: bold; color: #002758; margin-bottom: 5px; }
+        .top-count { font-size: 1.2em; font-weight: 800; color: #333; }
+        .status-dot {
+            height: 8px; width: 8px; background-color: #00c853; border-radius: 50%;
+            display: inline-block; margin-right: 5px; animation: blink 1.5s infinite;
+        }
+        @keyframes blink { 0% { opacity: 0.3; } 50% { opacity: 1; } 100% { opacity: 0.3; } }
+        </style>
+    """, unsafe_allow_html=True)
+
+    loc_counts = df['고사장'].value_counts()
+    
+    # 가로 스크롤 형태의 상단 대시보드
+    dash_html = "<div class='top-dash-container'>"
+    for loc, count in loc_counts.items():
+        dash_html += f"""
+            <div class='top-card'>
+                <div class='top-loc-name'>{loc}</div>
+                <div class='top-count'><span class='status-dot'></span>{count}명</div>
+                <div style='font-size: 0.7em; color: #888; margin-top: 5px;'>매칭 중...</div>
+            </div>
+        """
+    dash_html += "</div>"
+    st.markdown(dash_html, unsafe_allow_html=True)
+
 # --- 섹션 1: 카풀 매칭 신청 ---
 st.markdown("<div class='section-title'>1. 카풀 매칭 신청</div>", unsafe_allow_html=True)
 st.markdown("""
@@ -175,6 +215,8 @@ with st.form("join_form"):
             st.success("신청 완료! 아래에서 팀 정보를 확인하세요."); st.balloons(); time.sleep(1); st.rerun()
         else: st.error("응시번호 8자리를 정확히 입력해주세요.")
 
+
+    
 # --- 섹션 2: 내 매칭 확인 ---
 st.markdown("<div class='section-title'>2. 내 매칭 상황 확인</div>", unsafe_allow_html=True)
 v_no = st.text_input("🔐 신청한 응시번호 입력하여 조회", type="password")
