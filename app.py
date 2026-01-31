@@ -167,7 +167,12 @@ if not df.empty:
         </style>
     """, unsafe_allow_html=True)
 
-    loc_counts = df['고사장'].value_counts()
+    if not df.empty:
+    # 닉네임에 '취소됨'이 포함되지 않은 정상 신청자만 필터링해서 카운트
+    active_only = df[~df['닉네임'].str.contains("취소됨", na=False)]
+    loc_counts = active_only['고사장'].value_counts()
+    
+    # 이후 대시보드 그리는 html 코드는 그대로 유지
     
     # 가로 스크롤 형태의 상단 대시보드
     dash_html = "<div class='top-dash-container'>"
