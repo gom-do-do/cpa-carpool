@@ -338,7 +338,7 @@ col_bl, col_br = st.columns([0.4, 0.6])
 with col_bl:
     with st.form("b_form"):
         bt = st.text_input("모집 제목")
-        bp = st.selectbox("고사장", [c["is"] for c in TEST_CENTERS] if 'is' in TEST_CENTERS[0] else [c["이름"] for c in TEST_CENTERS])
+        bp = st.selectbox("고사장", [c["이름"] for c in TEST_CENTERS])
         bl = st.text_input("오픈톡 링크")
         if st.form_submit_button("글 올리기"):
             if bt and bl:
